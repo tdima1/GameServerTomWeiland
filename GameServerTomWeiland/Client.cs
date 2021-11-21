@@ -12,11 +12,13 @@ namespace GameServerTomWeiland
 
       public int id;
       public TCP tcp;
+      public UDP udp;
 
       public Client(int clientId)
       {
          id = clientId;
          tcp = new TCP(id);
+         udp = new UDP(id);
       }
 
       public class TCP
@@ -126,6 +128,43 @@ namespace GameServerTomWeiland
                Console.WriteLine($"Error sending data to player {id} via TCP: {ex.Message}.");
             }
          }
+      }
+
+      public class UDP
+      {
+         public IPEndPoint endPoint;
+
+         private int clientId;
+
+         public UDP(int id)
+         {
+            clientId = id;
+         }
+
+         public void Connect(IPEndPoint endPoint)
+         {
+            this.endPoint = endPoint;
+            ServerSend.UDPTest(clientId);
+         }
+         
+         public void SendData(Packet packet)
+         {
+            Server.SendUDPData(endPoint, packet);
+         }
+
+         public void HandleData(Packet packet)
+         {
+            int packetLength = packet.ReadInt();
+            byte[] data = packet.ReadBytes(packetLength);
+
+            ThreadManager.ExecuteOnMainThread(() => {
+               using(Packet packet = new Packet(data)) {
+                  int packetId = packet.ReadInt();
+                  Server.packetHandlers[packetId](clientId, packet);
+               }
+            });
+         }
+
       }
    }
 }
