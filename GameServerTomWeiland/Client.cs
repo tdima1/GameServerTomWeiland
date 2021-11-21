@@ -27,6 +27,8 @@ namespace GameServerTomWeiland
          private NetworkStream stream;
          private byte[] receiveBuffer;
 
+         private Packet receivedData;
+
          public TCP(int id)
          {
             this.id = id;
@@ -40,6 +42,8 @@ namespace GameServerTomWeiland
 
             stream = socket.GetStream();
             receiveBuffer = new byte[dataBufferSize];
+
+            receivedData = new Packet();
 
             stream.BeginRead(receiveBuffer, 0, dataBufferSize, ReceiveCallback, null);
 
@@ -59,12 +63,54 @@ namespace GameServerTomWeiland
                byte[] data = new byte[byteLength];
                Array.Copy(receiveBuffer, data, byteLength);
 
+               receivedData.Reset(HandleData(data));
                stream.BeginRead(receiveBuffer, 0, dataBufferSize, ReceiveCallback, null);
 
             } catch(Exception ex) {
 
                Console.WriteLine($"Error receiving TCP data {ex.Message}");
             }
+         }
+
+         private bool HandleData(byte[] data)
+         {
+            int packetLength = 0;
+
+            receivedData.SetBytes(data);
+
+            if(receivedData.UnreadLength() >= 4) {
+               packetLength = receivedData.ReadInt();
+
+               if(packetLength <= 0) {
+                  return true;
+               }
+            }
+
+            while(packetLength > 0 && packetLength <= receivedData.UnreadLength()) {
+               byte[] packetBytes = receivedData.ReadBytes(packetLength);
+               ThreadManager.ExecuteOnMainThread(() => {
+                  using(Packet packet = new Packet(packetBytes)) {
+
+                     int packetId = packet.ReadInt();
+                     Server.packetHandlers[packetId](id, packet);
+                  }
+               });
+
+               packetLength = 0;
+               if(receivedData.UnreadLength() >= 4) {
+                  packetLength = receivedData.ReadInt();
+
+                  if(packetLength <= 0) {
+                     return true;
+                  }
+               }
+            }
+
+            if(packetLength <= 1) {
+               return true;
+            }
+
+            return false;
          }
 
          public void SendData(Packet packet)
