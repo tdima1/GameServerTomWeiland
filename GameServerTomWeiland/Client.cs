@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Net;
 using System.Net.Sockets;
+using System.Numerics;
 
 namespace GameServerTomWeiland
 {
@@ -14,11 +15,35 @@ namespace GameServerTomWeiland
       public TCP tcp;
       public UDP udp;
 
+      public Player player;
+
       public Client(int clientId)
       {
          id = clientId;
          tcp = new TCP(id);
          udp = new UDP(id);
+      }
+
+      public void SendIntoGame(string playerName)
+      {
+         player = new Player(id, playerName, Vector3.Zero);
+
+         // sends ALL THE OTHER already existing players to this player.
+         foreach(Client client in Server.clients.Values) {
+            if (client.player != null) {
+               if (client.id != id) {
+                  ServerSend.SpawnPlayer(id, client.player);
+               }
+            }
+         }
+
+         //sends THIS PLAYER'S info to all other players, and himself.
+         foreach (Client client in Server.clients.Values) {
+            if (client.player != null) {
+               ServerSend.SpawnPlayer(client.id, player);
+            }
+         }
+
       }
 
       public class TCP
@@ -144,7 +169,7 @@ namespace GameServerTomWeiland
          public void Connect(IPEndPoint endPoint)
          {
             this.endPoint = endPoint;
-            ServerSend.UDPTest(clientId);
+            //ServerSend.UDPTest(clientId);
          }
          
          public void SendData(Packet packet)

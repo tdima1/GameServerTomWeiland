@@ -44,13 +44,26 @@ namespace GameServerTomWeiland
          }
       }
 
-      public static void UDPTest(int toClient)
+      public static void SpawnPlayer(int toClient, Player player)
       {
-         using (Packet packet = new Packet((int)ServerPackets.udpTest)) {
-            packet.Write("This is the UDP test.");
+         using (Packet packet = new Packet((int)ServerPackets.spawnPlayer)) {
+            packet.Write(player.id);
+            packet.Write(player.username);
+            packet.Write(player.position);
+            packet.Write(player.rotation);
 
-            SendUDPData(toClient, packet);
+            SendTCPData(toClient, packet);
          }
+
       }
+
+      //public static void UDPTest(int toClient)
+      //{
+      //   using (Packet packet = new Packet((int)ServerPackets.udpTest)) {
+      //      packet.Write("This is the UDP test.");
+
+      //      SendUDPData(toClient, packet);
+      //   }
+      //}
    }
 }
