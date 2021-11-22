@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Numerics;
 using System.Text;
 
 namespace GameServerTomWeiland
@@ -21,6 +22,19 @@ namespace GameServerTomWeiland
          //TODO: send player into game
          Server.clients[fromClient].SendIntoGame(username);
 
+      }
+
+      public static void PlayerMovement(int fromClient, Packet packet)
+      {
+         bool[] inputs = new bool[packet.ReadInt()];
+
+         for (int i = 0; i < inputs.Length; i++) {
+            inputs[i] = packet.ReadBool();
+         }
+
+         Quaternion rotation = packet.ReadQuaternion();
+
+         Server.clients[fromClient].player.SetInput(inputs, rotation);
       }
 
       //internal static void UDPTestReceived(int fromClient, Packet packet)

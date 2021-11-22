@@ -26,11 +26,31 @@ namespace GameServerTomWeiland
          }
       }
 
+      private static void SendTCPDataToAllExcept(int _exceptClient, Packet _packet)
+      {
+         _packet.WriteLength();
+         for(int i = 1; i <= Server.MaxPlayers; i++) {
+            if(i != _exceptClient) {
+               Server.clients[i].tcp.SendData(_packet);
+            }
+         }
+      }
+
       private static void SendUDPDataToAll(Packet packet)
       {
          packet.WriteLength();
          for(int i = 1; i < Server.MaxPlayers; i++) {
             Server.clients[i].udp.SendData(packet);
+         }
+      }
+
+      private static void SendUDPDataToAllExcept(int _exceptClient, Packet _packet)
+      {
+         _packet.WriteLength();
+         for(int i = 1; i <= Server.MaxPlayers; i++) {
+            if(i != _exceptClient) {
+               Server.clients[i].udp.SendData(_packet);
+            }
          }
       }
 
@@ -55,6 +75,26 @@ namespace GameServerTomWeiland
             SendTCPData(toClient, packet);
          }
 
+      }
+
+      public static void PlayerPosition(Player player)
+      {
+         using (Packet packet = new Packet((int)ServerPackets.playerPosition)) {
+            packet.Write(player.id);
+            packet.Write(player.position);
+
+            SendUDPDataToAll(packet);
+         }
+      }
+
+      public static void PlayerRotation(Player player)
+      {
+         using(Packet packet = new Packet((int)ServerPackets.playerRotation)) {
+            packet.Write(player.id);
+            packet.Write(player.rotation);
+
+            SendUDPDataToAllExcept(player.id, packet);
+         }
       }
 
       //public static void UDPTest(int toClient)

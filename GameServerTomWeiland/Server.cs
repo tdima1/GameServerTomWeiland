@@ -93,7 +93,9 @@ namespace GameServerTomWeiland
       public static void SendUDPData(IPEndPoint clientEndPoint, Packet packet)
       {
          try {
-            udpListener.BeginSend(packet.ToArray(), packet.Length(), clientEndPoint, null, null);
+            if (clientEndPoint != null) {
+               udpListener.BeginSend(packet.ToArray(), packet.Length(), clientEndPoint, null, null);
+            }
 
          } catch(Exception ex) {
 
@@ -109,6 +111,7 @@ namespace GameServerTomWeiland
 
          packetHandlers = new Dictionary<int, PacketHandler> {
             { (int) ClientPackets.welcomeReceived, ServerHandle.WelcomeReceived },
+            { (int) ClientPackets.playerMovement, ServerHandle.PlayerMovement },
             //{ (int) ClientPackets.udpTestReceived, ServerHandle.UDPTestReceived }
          };
 
