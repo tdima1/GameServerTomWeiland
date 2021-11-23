@@ -43,7 +43,16 @@ namespace GameServerTomWeiland
                ServerSend.SpawnPlayer(client.id, player);
             }
          }
+      }
 
+      public void Disconnect()
+      {
+         Console.WriteLine($"{tcp.Socket.Client.RemoteEndPoint} has disconnected.");
+
+         player = null;
+
+         tcp.Disconnect();
+         udp.Disconnect();
       }
 
       public class TCP
@@ -84,6 +93,7 @@ namespace GameServerTomWeiland
                int byteLength = stream.EndRead(result);
 
                if(byteLength <= 0) {
+                  Server.clients[id].Disconnect();
                   return;
                }
 
@@ -96,6 +106,7 @@ namespace GameServerTomWeiland
             } catch(Exception ex) {
 
                Console.WriteLine($"Error receiving TCP data {ex.Message}");
+               Server.clients[id].Disconnect();
             }
          }
 
@@ -153,6 +164,16 @@ namespace GameServerTomWeiland
                Console.WriteLine($"Error sending data to player {id} via TCP: {ex.Message}.");
             }
          }
+
+         public void Disconnect()
+         {
+            Socket.Close();
+            stream = null;
+            receivedData = null;
+            receiveBuffer = null;
+            Socket = null;
+         }
+
       }
 
       public class UDP
@@ -170,6 +191,11 @@ namespace GameServerTomWeiland
          {
             this.endPoint = endPoint;
             //ServerSend.UDPTest(clientId);
+         }
+
+         public void Disconnect()
+         {
+            endPoint = null;
          }
          
          public void SendData(Packet packet)
